@@ -1,4 +1,4 @@
-from fastapi import FastAPI,Request,Form
+from fastapi import FastAPI,Request,Form,Depends
 from fastapi.responses import HTMLResponse,RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -19,9 +19,14 @@ async def read_form(request: Request):
     return templates.TemplateResponse("form.html",{"request":request})
 
 @app.post("/submit")
-async def handle_form(user_input: str = Form(...)):
-    return RedirectResponse(url = f"/display?text={user_input}",status_code=303)
+async def handle_form(user_input: str = Form(...), db: Session = Depends(get_db)):
+    new_entry = database.UserInput(text_content = user_input)
+    db.add(new_entry)
+    db.commit()
+    db.refresh(new_entry)
+    return RedirectResponse(url = f"/display/{new_entry.id}", status_code=303)
 
-@app.get("/display")
-async def display_string(request : Request, text: str):
-    return templates.TemplateResponse("result.html",{"request":request, "text":text})
+@app.get("/display/{item_id}", response_class=HTMLResponse)
+async def display_string(request : Request, item_id : int, db: Session = Depends(get_db)):
+    item = db.query(database.UserInput).filter(database.UserInput.id == item_id).first()
+    return templates.TemplateResponse("result.html",{"request" : request, "text" : item.text_content})

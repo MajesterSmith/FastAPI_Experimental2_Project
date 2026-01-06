@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, create_url, Column, Integer, String
+from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -10,7 +10,7 @@ Base = declarative_base()
 
 class UserInput(Base):
     __tablename__ = "inputs"
-    id = Column(Integer, primary_key= True, Index = True)
+    id = Column(Integer, primary_key= True, index = True)
     text_content = Column(String)
 
 Base.metadata.create_all(bind = engine)
