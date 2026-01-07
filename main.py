@@ -26,6 +26,20 @@ def validate_user_data(email:str, password:str):
     
     return None
 
+@app.on_event("startup")
+def create_admin():
+    db = database.SessionLocal()
+    admin_exists = db.query(database.UserInput).filter(database.UserInput.user_email == "admin@example.com").first()
+
+    if not admin_exists:
+        admin_user = database.UserInput(
+            user_email = "admin@example.com",
+            user_password = "password123"
+        )
+        db.add(admin_user)
+        db.commit()
+    db.close()
+
 @app.get("/",response_class=HTMLResponse)
 async def read_form(request: Request):
     return templates.TemplateResponse("home_page.html",{"request":request})
@@ -46,15 +60,15 @@ async def handle_form(
     if error_message:
         return templates.TemplateResponse("login_page.html",{"request" : request, "error" : error_message})
 
-    new_entry = database.UserInput(
-        user_email = email,
-        user_password = password
-    )
-    db.add(new_entry)
-    db.commit()
-    db.refresh(new_entry)
-    return RedirectResponse(url = f"/display/{new_entry.id}", status_code=303)
+    user = db.query(database.UserInput).filter(
+        database.UserInput.user_email == email,
+        database.UserInput.user_password == password
+    ).first()
 
+    if user:
+        return RedirectResponse(url = f"/display/{user.id}",status_code=303)
+    else:
+        return templates.TemplateResponse("login_page.html",{"request": request, "error" : "Invalid email or password"})
 
 @app.get("/display/{item_id}", response_class=HTMLResponse)
 async def display_string(request : Request, item_id : int, db: Session = Depends(get_db)):
