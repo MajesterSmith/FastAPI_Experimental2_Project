@@ -9,8 +9,9 @@ SessionLocal = sessionmaker(autocommit = False, autoflush = False, bind = engine
 Base = declarative_base()
 
 class UserInput(Base):
-    __tablename__ = "inputs"
+    __tablename__ = "User_Input"
     id = Column(Integer, primary_key= True, index = True)
-    text_content = Column(String)
+    user_email = Column(String, index = True)
+    user_password = Column(String)
 
 Base.metadata.create_all(bind = engine)

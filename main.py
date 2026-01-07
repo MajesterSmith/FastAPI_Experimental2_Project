@@ -16,17 +16,28 @@ def get_db():
 
 @app.get("/",response_class=HTMLResponse)
 async def read_form(request: Request):
-    return templates.TemplateResponse("form.html",{"request":request})
+    return templates.TemplateResponse("home_page.html",{"request":request})
+
+@app.get("/login_page", response_class=HTMLResponse)
+async def login_form(request: Request):
+    return templates.TemplateResponse("login_page.html", {"request": request})
 
 @app.post("/submit")
-async def handle_form(user_input: str = Form(...), db: Session = Depends(get_db)):
-    new_entry = database.UserInput(text_content = user_input)
+async def handle_form(email: str = Form(...),
+                  password: str = Form(...),
+                  db: Session = Depends(get_db)
+):
+    new_entry = database.UserInput(
+        user_email = email,
+        user_password = password
+    )
     db.add(new_entry)
     db.commit()
     db.refresh(new_entry)
     return RedirectResponse(url = f"/display/{new_entry.id}", status_code=303)
 
+
 @app.get("/display/{item_id}", response_class=HTMLResponse)
 async def display_string(request : Request, item_id : int, db: Session = Depends(get_db)):
     item = db.query(database.UserInput).filter(database.UserInput.id == item_id).first()
-    return templates.TemplateResponse("result.html",{"request" : request, "text" : item.text_content})
+    return templates.TemplateResponse("result.html",{"request" : request, "text" : item.user_email})
